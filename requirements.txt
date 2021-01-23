@@ -1,3 +1,5 @@
 numpy
 opencv-python
 imutils
+openpyxl
+csv

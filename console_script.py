@@ -1,8 +1,9 @@
 import argparse
 import cv2
+import os
 
 from test_grader import grade_test
-from test_grader_utils import get_answer_key_from_txt
+from test_grader_utils import get_answer_key_default, get_answer_key_csv, get_answer_key_excel
 
 
 def get_input_data():
@@ -11,9 +12,19 @@ def get_input_data():
     ap.add_argument("-i", "--image", required=True, help="Path to the input image")
     args = vars(ap.parse_args())
 
-    # get answers keys from txt file
-    answer_key = get_answer_key_from_txt(args['answers'])
+    answers_file_path = args['answers']
     input_img = cv2.imread(args["image"])
+
+    _, file_extension = os.path.splitext(answers_file_path)
+    if file_extension == "" or file_extension == ".txt":
+        answer_key = get_answer_key_default(answers_file_path)
+    elif file_extension == ".csv":
+        answer_key = get_answer_key_csv(answers_file_path)
+    elif file_extension == ".xlsx":
+        answer_key = get_answer_key_excel(answers_file_path)
+    else:
+        raise Exception("Specified file with correct answers has unsupported file format")
+
     return input_img, answer_key
 
 
