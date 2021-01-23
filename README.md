@@ -8,6 +8,7 @@ python console_script.py -i test_exam/sheets/test2.png -a test_exam/correct_answ
 ```
 Close by "ESC" key
 
-## TODO
-- [ ] grade all tests in directory (path to dir should be provided)
-- [ ] export scores to excel file 
+##  Files dscription
+<b>console_script</b> - script to run program from console </br>
+<b>test_grader</b> - test grader backend code, main method is grade_test, which is used in console_script </br>
+<b>test_grader_utils</b> - additional utils, used mainly to research purpose or by console script </br>
