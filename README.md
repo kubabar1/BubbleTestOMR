@@ -4,8 +4,9 @@ Program basis on this tutorial: https://www.pyimagesearch.com/2016/10/03/bubble-
 
 ## How to run?
 ```
-python test_grader.py -i test_exam/sheets/test2.png -a test_exam/correct_answers.txt
+python console_script.py -i test_exam/sheets/test2.png -a test_exam/correct_answers.txt
 ```
+Close by "ESC" key
 
 ## TODO
 - [ ] grade all tests in directory (path to dir should be provided)
