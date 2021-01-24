@@ -68,9 +68,9 @@ def main():
     scores_array = []
     checked_answers_array = []
     for idx, input_img in enumerate(input_images):
-        correct, paper, checked_answers = grade_test(input_img, answer_key)
-        score = (correct / 5.0) * 100
-        show_results(input_img, paper, score, input_images_paths[idx], show_result_images)
+        resized, correct, paper, checked_answers = grade_test(input_img, answer_key, input_images_paths[idx])
+        score = (correct / len(answer_key.keys())) * 100
+        show_results(resized, paper, score, input_images_paths[idx], show_result_images)
         scores_array.append(score)
         checked_answers_array.append(checked_answers)
     save_results(input_images_paths, output_report_dir, scores_array, checked_answers_array)

@@ -3,7 +3,7 @@ from imutils.perspective import four_point_transform
 import numpy as np
 import imutils
 import cv2
-
+from test_grader_utils import show_contours_doc_cnt
 
 def obtain_silhouette(input_image):
     """Obtain silhouette of the document by converting it to greyscale, blurring and finding edges
@@ -52,18 +52,21 @@ def perspective_transform(input_img, edged_img, gray_img):
     otherwise it return tuple containing input_img and gray_img
     """
     doc_cnt = get_paper_contour(edged_img)
-    # show_contours_doc_cnt(input_img, doc_cnt)
+    # print(f"doc_cnt: {doc_cnt}")
     if doc_cnt is not None:
+        # print("doc_cnt is NOT None")
+        # show_contours_doc_cnt(input_img, doc_cnt)
         paper = four_point_transform(input_img, doc_cnt.reshape(4, 2))
         warped = four_point_transform(gray_img, doc_cnt.reshape(4, 2))
     else:
+        # print("doc_cnt IS None")
         paper = input_img
         warped = gray_img
 
     return paper, warped
 
 
-def get_all_questions_contours(thresh_img):
+def get_all_questions_contours(thresh_img, paper):
     """Find contours in the thresholded image, then initialize the list of contours that correspond to questions
 
     :param thresh_img: thresholded input image
@@ -72,13 +75,32 @@ def get_all_questions_contours(thresh_img):
     cnts = cv2.findContours(thresh_img.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
     question_cnts = []
+    
+    # print(f"detected cnts num: {len(cnts)}")
+    # show_cnts_img = paper.copy()
+    # cv2.drawContours(show_cnts_img, cnts, -1, (255,0,0), 3)
+    # cv2.imshow("all_circles", show_cnts_img)
+    # while True:
+    #     k = cv2.waitKey(25) & 0xFF
+    #     if k == 27:
+    #         break
+    # cv2.destroyAllWindows()
     for contour in cnts:
         # compute the bounding box of the contour
         (x, y, w, h) = cv2.boundingRect(contour)
         aspect_ratio = w / float(h)
         # check if detected contour is a question contour
-        if w >= 20 and h >= 20 and 0.9 <= aspect_ratio <= 1.1:
+        if w >= 20 and h >= 20 and 0.9 <= aspect_ratio <= 1.2:
             question_cnts.append(contour)
+    # print(f"detected question_cnts num: {len(question_cnts)}")
+    # show_cnts_img = paper.copy()
+    # cv2.drawContours(show_cnts_img, question_cnts, -1, (255,0,0), 3)
+    # cv2.imshow("all_circles", show_cnts_img)
+    # while True:
+    #     k = cv2.waitKey(25) & 0xFF
+    #     if k == 27:
+    #         break
+    # cv2.destroyAllWindows()
     return question_cnts
 
 
@@ -133,31 +155,55 @@ def check_answers(question_cnts, answer_key, thresh_img, paper):
         if correct_answer_key == bubbled[1]:
             color = correct_answer_color
             correct += 1
-
+        # print(f"q: {q}; i: {i}; correct_answer_key: {correct_answer_key}; len(cnts): {len(cnts)}")
         # draw the outline of the correct answer on the test
         cv2.drawContours(paper, [cnts[correct_answer_key]], -1, color, 3)
+        # cv2.imshow("test_answer_marked", paper)
+        # while True:
+        #     k = cv2.waitKey(25) & 0xFF
+        #     if k == 27:
+        #         break
+        # cv2.destroyAllWindows()
         checked_answers.append(bubbled[1])
     return correct, checked_answers
 
 
-def grade_test(input_img, answer_key):
+def grade_test(input_img, answer_key, img_name):
     """Grade entire test
 
     :param input_img: input image containing test with marked answers
     :param answer_key: answers
     :return: tuple containing points count, detected document with checked correct answers and answers checked by user
     """
+    if input_img.shape[1] > 480:
+        width = 480
+        height = int(input_img.shape[0] * width / input_img.shape[1])
+        resized = cv2.resize(input_img, (width, height), interpolation = cv2.INTER_AREA)
+    else:
+        resized = input_img
+
     # (1) Detect exam silhouette on given input image
-    edged, gray = obtain_silhouette(input_img)
+    edged, gray = obtain_silhouette(resized)
 
     # (2) Transform perspective of detected document and its grayscale image to bird-eye-view
-    paper, warped = perspective_transform(input_img, edged, gray)
-
+    paper, warped = perspective_transform(resized, edged, gray)
     # apply Otsu's thresholding method to binarize the warped piece of paper
     thresh = cv2.threshold(warped, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
 
+    print(f"input_img: {img_name}")
+    # cv2.imshow(img_name + "_edged", edged)
+    # # cv2.imshow(img_name + "_gray", gray)
+    # # cv2.imshow(img_name + "_warped", warped)
+    # cv2.imshow(img_name + "_paper", paper)
+    # while True:
+    #     k = cv2.waitKey(25) & 0xFF
+    #     if k == 27:
+    #         break
+    # cv2.destroyAllWindows()
+
+
     # (3) Get contours of all possible questions answers
-    question_cnts = get_all_questions_contours(thresh)
+    question_cnts = get_all_questions_contours(thresh, paper)
 
     # (4) sort the question contours top-to-bottom
     question_cnts = contours.sort_contours(question_cnts, method="top-to-bottom")[0]
@@ -165,4 +211,4 @@ def grade_test(input_img, answer_key):
     # (5) (6) (7) for each exam question, determine the bubbles are marked as answers and compare with the key to
     # make sure that the user gave the correct answer
     correct, checked_answers = check_answers(question_cnts, answer_key, thresh, paper)
-    return correct, paper, checked_answers
+    return resized, correct, paper, checked_answers
