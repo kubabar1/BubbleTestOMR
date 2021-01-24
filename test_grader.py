@@ -52,14 +52,11 @@ def perspective_transform(input_img, edged_img, gray_img):
     otherwise it return tuple containing input_img and gray_img
     """
     doc_cnt = get_paper_contour(edged_img)
-    # print(f"doc_cnt: {doc_cnt}")
     if doc_cnt is not None:
-        # print("doc_cnt is NOT None")
         # show_contours_doc_cnt(input_img, doc_cnt)
         paper = four_point_transform(input_img, doc_cnt.reshape(4, 2))
         warped = four_point_transform(gray_img, doc_cnt.reshape(4, 2))
     else:
-        # print("doc_cnt IS None")
         paper = input_img
         warped = gray_img
 
@@ -75,23 +72,17 @@ def get_all_questions_contours(thresh_img, paper):
     cnts = cv2.findContours(thresh_img.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
     question_cnts = []
-    
-    # print(f"detected cnts num: {len(cnts)}")
-    # show_cnts_img = paper.copy()
-    # cv2.drawContours(show_cnts_img, cnts, -1, (255,0,0), 3)
-    # cv2.imshow("all_circles", show_cnts_img)
-    # while True:
-    #     k = cv2.waitKey(25) & 0xFF
-    #     if k == 27:
-    #         break
-    # cv2.destroyAllWindows()
     for contour in cnts:
         # compute the bounding box of the contour
         (x, y, w, h) = cv2.boundingRect(contour)
         aspect_ratio = w / float(h)
         # check if detected contour is a question contour
-        if w >= 20 and h >= 20 and 0.9 <= aspect_ratio <= 1.2:
-            question_cnts.append(contour)
+        if w >= 20 and h >= 20  and 0.9 <= aspect_ratio <= 1.2:
+            area = cv2.contourArea(contour)
+            perimeter = cv2.arcLength(contour,True)
+            roundness_ratio = 4 * np.pi * area / ( perimeter**2 )
+            if roundness_ratio > 0.7:
+                question_cnts.append(contour)
     # print(f"detected question_cnts num: {len(question_cnts)}")
     # show_cnts_img = paper.copy()
     # cv2.drawContours(show_cnts_img, question_cnts, -1, (255,0,0), 3)
@@ -155,15 +146,8 @@ def check_answers(question_cnts, answer_key, thresh_img, paper):
         if correct_answer_key == bubbled[1]:
             color = correct_answer_color
             correct += 1
-        # print(f"q: {q}; i: {i}; correct_answer_key: {correct_answer_key}; len(cnts): {len(cnts)}")
         # draw the outline of the correct answer on the test
         cv2.drawContours(paper, [cnts[correct_answer_key]], -1, color, 3)
-        # cv2.imshow("test_answer_marked", paper)
-        # while True:
-        #     k = cv2.waitKey(25) & 0xFF
-        #     if k == 27:
-        #         break
-        # cv2.destroyAllWindows()
         checked_answers.append(bubbled[1])
     return correct, checked_answers
 
@@ -175,6 +159,7 @@ def grade_test(input_img, answer_key, img_name):
     :param answer_key: answers
     :return: tuple containing points count, detected document with checked correct answers and answers checked by user
     """
+    # resize input img if too big
     if input_img.shape[1] > 480:
         width = 480
         height = int(input_img.shape[0] * width / input_img.shape[1])
@@ -187,20 +172,16 @@ def grade_test(input_img, answer_key, img_name):
 
     # (2) Transform perspective of detected document and its grayscale image to bird-eye-view
     paper, warped = perspective_transform(resized, edged, gray)
+    # resize after sketching if too small
+    if paper.shape[1] < 240:
+        width = 240
+        height = int(paper.shape[0] * width / paper.shape[1])
+        paper = cv2.resize(paper, (width, height), interpolation = cv2.INTER_AREA)
+        warped = cv2.resize(warped, (width, height), interpolation = cv2.INTER_AREA)
+
+    
     # apply Otsu's thresholding method to binarize the warped piece of paper
     thresh = cv2.threshold(warped, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
-
-    print(f"input_img: {img_name}")
-    # cv2.imshow(img_name + "_edged", edged)
-    # # cv2.imshow(img_name + "_gray", gray)
-    # # cv2.imshow(img_name + "_warped", warped)
-    # cv2.imshow(img_name + "_paper", paper)
-    # while True:
-    #     k = cv2.waitKey(25) & 0xFF
-    #     if k == 27:
-    #         break
-    # cv2.destroyAllWindows()
-
 
     # (3) Get contours of all possible questions answers
     question_cnts = get_all_questions_contours(thresh, paper)
