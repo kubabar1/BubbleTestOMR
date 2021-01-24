@@ -87,15 +87,18 @@ def get_answer_key_csv(answers_csv_file_path):
     return answer_key
 
 
-def save_results(input_file_name, output_report_dir, checked_answers):
+def save_results(input_images_paths, output_report_dir, scores_array, checked_answers_array):
     """Save results to given directory as file results.xlsx
 
-    :param input_file_name:  name of input file containing test
-    :param output_report_dir: directory where
-    :param checked_answers: answers checked by user - detected by program basis on input image
+    :param input_images_paths: path to all input images
+    :param output_report_dir: directory where output report with results (report.xlsx) will be generated
+    :param scores_array: array containing scores received
+    :param checked_answers_array: array with answers checked by user - detected by program basis on input image
     """
     book = openpyxl.Workbook()
     sheet = book.active
-    sheet.append((input_file_name, *checked_answers))
-    book.save(os.path.join(output_report_dir, "report.xlsx"))
+    for idx, input_image_path in enumerate(input_images_paths):
+        input_file_name = os.path.splitext(os.path.basename(input_image_path))[0]
+        sheet.append((input_file_name, scores_array[idx], *[chr(ca + 65) for ca in checked_answers_array[idx]]))
+        book.save(os.path.join(output_report_dir, "report.xlsx"))
     pass
