@@ -1,3 +1,4 @@
+import os
 import cv2
 import csv
 import openpyxl
@@ -84,3 +85,17 @@ def get_answer_key_csv(answers_csv_file_path):
         for idx, val in enumerate(row):
             answer_key[idx] = ord(val.strip().upper()) - 65
     return answer_key
+
+
+def save_results(input_file_name, output_report_dir, checked_answers):
+    """Save results to given directory as file results.xlsx
+
+    :param input_file_name:  name of input file containing test
+    :param output_report_dir: directory where
+    :param checked_answers: answers checked by user - detected by program basis on input image
+    """
+    book = openpyxl.Workbook()
+    sheet = book.active
+    sheet.append((input_file_name, *checked_answers))
+    book.save(os.path.join(output_report_dir, "report.xlsx"))
+    pass
