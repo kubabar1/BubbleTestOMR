@@ -118,6 +118,7 @@ def check_answers(question_cnts, answer_key, thresh_img, paper):
     :return: count of correct answers checked by user
     """
     correct = 0
+    checked_answers = []
     wrong_answer_color = (0, 0, 255)
     correct_answer_color = (0, 255, 0)
     for (q, i) in enumerate(np.arange(0, len(question_cnts), 5)):
@@ -135,10 +136,17 @@ def check_answers(question_cnts, answer_key, thresh_img, paper):
 
         # draw the outline of the correct answer on the test
         cv2.drawContours(paper, [cnts[correct_answer_key]], -1, color, 3)
-    return correct
+        checked_answers.append(bubbled[1])
+    return correct, checked_answers
 
 
 def grade_test(input_img, answer_key):
+    """Grade entire test
+
+    :param input_img: input image containing test with marked answers
+    :param answer_key: answers
+    :return: tuple containing points count, detected document with checked correct answers and answers checked by user
+    """
     # (1) Detect exam silhouette on given input image
     edged, gray = obtain_silhouette(input_img)
 
@@ -156,5 +164,5 @@ def grade_test(input_img, answer_key):
 
     # (5) (6) (7) for each exam question, determine the bubbles are marked as answers and compare with the key to
     # make sure that the user gave the correct answer
-    correct = check_answers(question_cnts, answer_key, thresh, paper)
-    return correct, paper
+    correct, checked_answers = check_answers(question_cnts, answer_key, thresh, paper)
+    return correct, paper, checked_answers

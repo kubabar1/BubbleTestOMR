@@ -1,4 +1,16 @@
+import os
 import cv2
+import csv
+import openpyxl
+from enum import Enum
+
+
+class FileFormat(Enum):
+    """ Format of input/output file
+    """
+    DEFAULT = '.txt'
+    CSV = '.csv'
+    EXCEL = '.xlsx'
 
 
 def show_contours_cvtColor(image, contours):
@@ -30,9 +42,60 @@ def show_contours_doc_cnt(image, doc_contour_points):
     pass
 
 
-def get_answer_key_from_txt(answers_txt_file_path):
+def get_answer_key_default(answers_file_path):
+    """Get answer keys from file in default format (correct answers for each question in new line)
+
+    :param answers_file_path: path to file with answers
+    :return: answers keys array
+    """
     answer_key = {}
-    with open(answers_txt_file_path, 'r') as f:
+    with open(answers_file_path, 'r') as f:
         for idx, line in enumerate(f.readlines()):
             answer_key[idx] = ord(line.replace("\n", "").upper()) - 65
     return answer_key
+
+
+def get_answer_key_excel(answers_excel_file_path):
+    """Get answer keys from file in excel xlsx format (correct answers for each question in new row of excel table in
+    first column "A" - each row of table is correct answer to question)
+
+    :param answers_excel_file_path: path to excel file with answers
+    :return: answers keys array
+    """
+    answer_key = {}
+    wb_obj = openpyxl.load_workbook(answers_excel_file_path)
+    sheet_obj = wb_obj.active
+    row_count = sheet_obj.max_row
+    for idx in range(1, row_count + 1):
+        answer_key[idx - 1] = ord(sheet_obj.cell(row=idx, column=1).value.upper()) - 65
+    return answer_key
+
+
+def get_answer_key_csv(answers_csv_file_path):
+    """Get answer keys from file in csv format (correct answers for each question are divided by dash, starting from
+    answer on first question, eg. B, E, A, D, B)
+
+    :param answers_csv_file_path: path to csv file with answers
+    :return: answers keys array
+    """
+    answer_key = {}
+    with open(answers_csv_file_path) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        row = next(csv_reader)
+        for idx, val in enumerate(row):
+            answer_key[idx] = ord(val.strip().upper()) - 65
+    return answer_key
+
+
+def save_results(input_file_name, output_report_dir, checked_answers):
+    """Save results to given directory as file results.xlsx
+
+    :param input_file_name:  name of input file containing test
+    :param output_report_dir: directory where
+    :param checked_answers: answers checked by user - detected by program basis on input image
+    """
+    book = openpyxl.Workbook()
+    sheet = book.active
+    sheet.append((input_file_name, *checked_answers))
+    book.save(os.path.join(output_report_dir, "report.xlsx"))
+    pass
