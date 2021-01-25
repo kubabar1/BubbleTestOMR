@@ -120,7 +120,7 @@ def get_marked_answer(question_cnts, thresh_img):
     return bubbled
 
 
-def check_answers(question_cnts, answer_key, thresh_img, paper):
+def check_answers(question_cnts, answer_key, thresh_img, paper, answers_count):
     """For each exam question contour, determine the bubbles are marked as answers and compare with the answer key to
     make sure that the user gave the correct answer, then draw result on paper
 
@@ -134,9 +134,9 @@ def check_answers(question_cnts, answer_key, thresh_img, paper):
     checked_answers = []
     wrong_answer_color = (0, 0, 255)
     correct_answer_color = (0, 255, 0)
-    for (q, i) in enumerate(np.arange(0, len(question_cnts), 5)):
+    for (q, i) in enumerate(np.arange(0, len(question_cnts), answers_count)):
         # sort the contours for the current question from left to right, then initialize the index of the bubbled answer
-        cnts = contours.sort_contours(question_cnts[i:i + 5])[0]
+        cnts = contours.sort_contours(question_cnts[i:i + answers_count])[0]
         bubbled = get_marked_answer(cnts, thresh_img)
 
         color = wrong_answer_color
@@ -152,7 +152,7 @@ def check_answers(question_cnts, answer_key, thresh_img, paper):
     return correct, checked_answers
 
 
-def grade_test(input_img, answer_key, img_name):
+def grade_test(input_img, answer_key, answers_count):
     """Grade entire test
 
     :param input_img: input image containing test with marked answers
@@ -191,5 +191,5 @@ def grade_test(input_img, answer_key, img_name):
 
     # (5) (6) (7) for each exam question, determine the bubbles are marked as answers and compare with the key to
     # make sure that the user gave the correct answer
-    correct, checked_answers = check_answers(question_cnts, answer_key, thresh, paper)
+    correct, checked_answers = check_answers(question_cnts, answer_key, thresh, paper, answers_count)
     return resized, correct, paper, checked_answers

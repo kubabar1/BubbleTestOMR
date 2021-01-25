@@ -27,12 +27,14 @@ def get_input_data():
                     help="Path to the output directory for generated report")
     ap.add_argument("-s", "--show_result_images", required=False, default=True, type=str2bool,
                     help="Are result images should be displayed")
+    ap.add_argument("-ac", "--answers_count", required=False, default=5, help="Count of possible answers")
     args = vars(ap.parse_args())
 
     input_path = args["image"]
     answers_file_path = args["answers"]
     output_report_dir = args["output_dir"]
     show_result_images = args["show_result_images"]
+    answers_count = int(args["answers_count"])
 
     if os.path.isfile(input_path):
         input_images_paths = [input_path]
@@ -51,7 +53,7 @@ def get_input_data():
     else:
         raise Exception("Specified file with correct answers has unsupported file format")
 
-    return input_images, answer_key, input_images_paths, output_report_dir, show_result_images
+    return input_images, answer_key, input_images_paths, output_report_dir, show_result_images, answers_count
 
 
 def show_results(input_img, paper_img, score, input_img_path, show_result_images):
@@ -64,11 +66,11 @@ def show_results(input_img, paper_img, score, input_img_path, show_result_images
 
 
 def main():
-    input_images, answer_key, input_images_paths, output_report_dir, show_result_images = get_input_data()
+    input_images, answer_key, input_images_paths, output_report_dir, show_result_images, answers_count = get_input_data()
     scores_array = []
     checked_answers_array = []
     for idx, input_img in enumerate(input_images):
-        resized, correct, paper, checked_answers = grade_test(input_img, answer_key, input_images_paths[idx])
+        resized, correct, paper, checked_answers = grade_test(input_img, answer_key, answers_count)
         score = (correct / len(answer_key.keys())) * 100
         show_results(resized, paper, score, input_images_paths[idx], show_result_images)
         scores_array.append(score)
