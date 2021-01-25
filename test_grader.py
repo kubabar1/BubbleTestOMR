@@ -3,7 +3,8 @@ from imutils.perspective import four_point_transform
 import numpy as np
 import imutils
 import cv2
-from test_grader_utils import show_contours_doc_cnt
+from skimage.measure import label, regionprops
+
 
 def obtain_silhouette(input_image):
     """Obtain silhouette of the document by converting it to greyscale, blurring and finding edges
@@ -72,17 +73,38 @@ def get_all_questions_contours(thresh_img, paper):
     cnts = cv2.findContours(thresh_img.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
     question_cnts = []
-    for contour in cnts:
+    for idx, contour in enumerate(cnts):
         # compute the bounding box of the contour
         (x, y, w, h) = cv2.boundingRect(contour)
-        aspect_ratio = w / float(h)
-        # check if detected contour is a question contour
-        if w >= 20 and h >= 20  and 0.9 <= aspect_ratio <= 1.2:
-            area = cv2.contourArea(contour)
-            perimeter = cv2.arcLength(contour,True)
-            roundness_ratio = 4 * np.pi * area / ( perimeter**2 )
-            if roundness_ratio > 0.7:
+
+        labels = label(thresh_img[y:y + h, x:x + w])
+        image_features = regionprops(labels)
+
+        for im_feature in image_features:
+            min_row, min_col, max_row, max_col = im_feature['BoundingBox']
+            convex_area = im_feature['ConvexArea']
+            height = max_row - min_row
+            width = max_col - min_col
+            tmp_image = paper.copy()[y:y + h, x:x + w]
+            # cv2.line(tmp_image, (min_col, min_row), (min_col, max_row), (0, 255, 0), thickness=3, lineType=8)
+            # cv2.line(tmp_image, (min_col, max_row), (max_col, max_row), (0, 255, 0), thickness=3, lineType=8)
+            # cv2.line(tmp_image, (max_col, max_row), (max_col, min_row), (0, 255, 0), thickness=3, lineType=8)
+            # cv2.line(tmp_image, (max_col, min_row), (min_col, min_row), (0, 255, 0), thickness=3, lineType=8)
+            ar = height / width
+
+            if int(convex_area) >= 700 and 0.5 <= ar < 1.5:
+                # cv2.imshow("qwe_convex_area=" + str(convex_area) + "_ar=" + str(ar) + "_width=" + str(
+                #     width) + "_height=" + str(height), tmp_image)
                 question_cnts.append(contour)
+
+        # aspect_ratio = w / float(h)
+        # # check if detected contour is a question contour
+        # if w >= 20 and h >= 20  and 0.9 <= aspect_ratio <= 1.2:
+        #     area = cv2.contourArea(contour)
+        #     perimeter = cv2.arcLength(contour,True)
+        #     roundness_ratio = 4 * np.pi * area / ( perimeter**2 )
+        #     if roundness_ratio > 0.7:
+        #         question_cnts.append(contour)
     # print(f"detected question_cnts num: {len(question_cnts)}")
     # show_cnts_img = paper.copy()
     # cv2.drawContours(show_cnts_img, question_cnts, -1, (255,0,0), 3)
@@ -163,7 +185,7 @@ def grade_test(input_img, answer_key, answers_count):
     if input_img.shape[1] > 480:
         width = 480
         height = int(input_img.shape[0] * width / input_img.shape[1])
-        resized = cv2.resize(input_img, (width, height), interpolation = cv2.INTER_AREA)
+        resized = cv2.resize(input_img, (width, height), interpolation=cv2.INTER_AREA)
     else:
         resized = input_img
 
@@ -176,20 +198,21 @@ def grade_test(input_img, answer_key, answers_count):
     if paper.shape[1] < 240:
         width = 240
         height = int(paper.shape[0] * width / paper.shape[1])
-        paper = cv2.resize(paper, (width, height), interpolation = cv2.INTER_AREA)
-        warped = cv2.resize(warped, (width, height), interpolation = cv2.INTER_AREA)
+        paper = cv2.resize(paper, (width, height), interpolation=cv2.INTER_AREA)
+        warped = cv2.resize(warped, (width, height), interpolation=cv2.INTER_AREA)
 
-    
     # apply Otsu's thresholding method to binarize the warped piece of paper
     thresh = cv2.threshold(warped, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
+
+    # cv2.imshow("thresh", thresh)
 
     # (3) Get contours of all possible questions answers
     question_cnts = get_all_questions_contours(thresh, paper)
 
     # (4) sort the question contours top-to-bottom
-    question_cnts = contours.sort_contours(question_cnts, method="top-to-bottom")[0]
+    # question_cnts = contours.sort_contours(question_cnts, method="top-to-bottom")[0]
 
     # (5) (6) (7) for each exam question, determine the bubbles are marked as answers and compare with the key to
     # make sure that the user gave the correct answer
-    correct, checked_answers = check_answers(question_cnts, answer_key, thresh, paper, answers_count)
-    return resized, correct, paper, checked_answers
+    # correct, checked_answers = check_answers(question_cnts, answer_key, thresh, paper, answers_count)
+    return resized, 0, paper, []

@@ -2,15 +2,6 @@ import os
 import cv2
 import csv
 import openpyxl
-from enum import Enum
-
-
-class FileFormat(Enum):
-    """ Format of input/output file
-    """
-    DEFAULT = '.txt'
-    CSV = '.csv'
-    EXCEL = '.xlsx'
 
 
 def show_contours_cvtColor(image, contours):
@@ -39,6 +30,25 @@ def show_contours_doc_cnt(image, doc_contour_points):
     cv2.line(tmp_image, tuple(c), tuple(d), (0, 255, 0), thickness=3, lineType=8)
     cv2.line(tmp_image, tuple(d), tuple(a), (0, 255, 0), thickness=3, lineType=8)
     cv2.imshow('doc_cnt_contours', tmp_image)
+    pass
+
+
+def show_bounding_box(image, x, y, w, h, frame_name):
+    """Show bounding box on image
+
+    :param image: image where bounding box was detected
+    :param x: x coordinate of bounding box top left point
+    :param y: y coordinate of bounding box top left point
+    :param w: width of bounding box
+    :param h: height of bounding box
+    :param frame_name: name of the frame with visible result
+    """
+    tmp_image = image.copy()
+    cv2.line(tmp_image, (x, y), (x + w, y), (0, 255, 0), thickness=3, lineType=8)
+    cv2.line(tmp_image, (x + w, y), (x + w, y + h), (0, 255, 0), thickness=3, lineType=8)
+    cv2.line(tmp_image, (x + w, y + h), (x, y + h), (0, 255, 0), thickness=3, lineType=8)
+    cv2.line(tmp_image, (x, y + h), (x, y), (0, 255, 0), thickness=3, lineType=8)
+    cv2.imshow(frame_name, tmp_image)
     pass
 
 

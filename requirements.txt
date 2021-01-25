@@ -3,3 +3,4 @@ opencv-python
 imutils
 openpyxl
 csv
+skimage
