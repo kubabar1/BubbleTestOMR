@@ -26,7 +26,7 @@ Close by "ESC" key
                         Count of possible answers
 ```
 
-##  Files dscription
+##  Files description
 <b>console_script</b> - script to run program from console </br>
 <b>test_grader</b> - test grader backend code, main method is grade_test, which is used in console_script </br>
 <b>test_grader_utils</b> - additional utils, used mainly to research purpose or by console script </br>
