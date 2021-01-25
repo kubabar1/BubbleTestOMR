@@ -210,9 +210,9 @@ def grade_test(input_img, answer_key, answers_count):
     question_cnts = get_all_questions_contours(thresh, paper)
 
     # (4) sort the question contours top-to-bottom
-    # question_cnts = contours.sort_contours(question_cnts, method="top-to-bottom")[0]
+    question_cnts = contours.sort_contours(question_cnts, method="top-to-bottom")[0]
 
     # (5) (6) (7) for each exam question, determine the bubbles are marked as answers and compare with the key to
     # make sure that the user gave the correct answer
-    # correct, checked_answers = check_answers(question_cnts, answer_key, thresh, paper, answers_count)
-    return resized, 0, paper, []
+    correct, checked_answers = check_answers(question_cnts, answer_key, thresh, paper, answers_count)
+    return resized, correct, paper, checked_answers
